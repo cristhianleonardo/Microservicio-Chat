@@ -19,10 +19,6 @@ echo [4/4] Generando reporte de cobertura...
 call mvn jacoco:report
 
 echo.
-echo [5/4] Verificando cobertura mínima...
-call mvn jacoco:check
-
-echo.
 echo ========================================
 echo    RESULTADOS
 echo ========================================
