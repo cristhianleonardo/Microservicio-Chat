@@ -94,4 +94,26 @@ public class ChatController {
     public List<ChatMessage> getRoomMessages(@PathVariable String roomId, @RequestHeader("X-User-Id") String userId) {
         return chatMessageRepository.findByRoomIdOrderByTimestampAsc(roomId);
     }
+
+    @PostMapping("/message")
+    @ResponseBody
+    public ChatMessage sendMessageHttp(@RequestBody ChatMessage chatMessage, @RequestHeader("X-User-Id") String userId) {
+        ChatRoom room = chatRoomRepository.findByRoomId(chatMessage.getRoomId())
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.isOnlyOwnerCanWrite() && !userId.equals(room.getOwnerId())) {
+            throw new RuntimeException("Only room owner can write messages");
+        }
+
+        chatMessage.setSenderId(userId);
+        chatMessage.setTimestamp(LocalDateTime.now());
+        chatMessage.setType(ChatMessage.MessageType.CHAT);
+        
+        ChatMessage savedMessage = chatMessageRepository.save(chatMessage);
+        
+        // También enviar por WebSocket para tiempo real
+        messagingTemplate.convertAndSend("/topic/" + chatMessage.getRoomId(), savedMessage);
+        
+        return savedMessage;
+    }
 } 
